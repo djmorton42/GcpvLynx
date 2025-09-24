@@ -2,12 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using CsvHelper;
+using CsvHelper.Configuration;
 using GcpvLynx.Models;
 
 namespace GcpvLynx.Parsers;
 
 /// <summary>
 /// Parser for GCPV CSV files with the specific format described in parser_specs.md
+/// Uses CsvHelper for robust CSV parsing
 /// </summary>
 public class GcpvCsvParser
 {
@@ -23,21 +26,24 @@ public class GcpvCsvParser
             throw new FileNotFoundException($"File not found: {filePath}");
         }
 
-        var lines = File.ReadAllLines(filePath);
         var racesByNumber = new Dictionary<string, RaceData>();
 
-        foreach (var line in lines)
+        using var reader = new StringReader(File.ReadAllText(filePath));
+        using var csv = new CsvReader(reader, new CsvConfiguration(System.Globalization.CultureInfo.InvariantCulture)
         {
-            if (string.IsNullOrWhiteSpace(line))
-                continue;
+            HasHeaderRecord = false, // GCPV files have no header
+            TrimOptions = TrimOptions.Trim
+        });
 
-            var columns = ParseCsvLine(line);
-            if (columns.Count == 0)
+        while (csv.Read())
+        {
+            var record = csv.Parser.Record;
+            if (record == null || record.Length == 0)
                 continue;
 
             // Each line contains both race header info and skater data
             // Extract race information
-            var raceNumber = GetRaceNumber(columns);
+            var raceNumber = GetRaceNumber(record);
             if (string.IsNullOrEmpty(raceNumber))
             {
                 continue;
@@ -46,13 +52,13 @@ public class GcpvCsvParser
             // Get or create race
             if (!racesByNumber.ContainsKey(raceNumber))
             {
-                racesByNumber[raceNumber] = ParseRaceHeader(columns);
+                racesByNumber[raceNumber] = ParseRaceHeader(record);
             }
 
             // Extract skater data
-            if (IsSkaterRow(columns))
+            if (IsSkaterRow(record))
             {
-                var skater = ParseSkaterData(columns);
+                var skater = ParseSkaterData(record);
                 if (skater != null)
                 {
                     racesByNumber[raceNumber].Skaters.Add(skater);
@@ -64,60 +70,12 @@ public class GcpvCsvParser
     }
 
     /// <summary>
-    /// Parses a single CSV line, handling quoted fields and commas within quotes
-    /// </summary>
-    private List<string> ParseCsvLine(string line)
-    {
-        var result = new List<string>();
-        var current = "";
-        var inQuotes = false;
-        var i = 0;
-
-        while (i < line.Length)
-        {
-            var c = line[i];
-
-            if (c == '"')
-            {
-                if (inQuotes && i + 1 < line.Length && line[i + 1] == '"')
-                {
-                    // Escaped quote
-                    current += '"';
-                    i += 2;
-                }
-                else
-                {
-                    // Toggle quote state
-                    inQuotes = !inQuotes;
-                    i++;
-                }
-            }
-            else if (c == ',' && !inQuotes)
-            {
-                result.Add(current.Trim());
-                current = "";
-                i++;
-            }
-            else
-            {
-                current += c;
-                i++;
-            }
-        }
-
-        // Add the last field
-        result.Add(current.Trim());
-
-        return result;
-    }
-
-    /// <summary>
     /// Extracts the race number from a row
     /// </summary>
-    private string GetRaceNumber(List<string> columns)
+    private string GetRaceNumber(string[] columns)
     {
         // Find "Race" and extract the next column value
-        for (int i = 0; i < columns.Count - 1; i++)
+        for (int i = 0; i < columns.Length - 1; i++)
         {
             if (columns[i].Trim().Equals("Race", StringComparison.OrdinalIgnoreCase))
             {
@@ -130,10 +88,10 @@ public class GcpvCsvParser
     /// <summary>
     /// Checks if this row contains skater data
     /// </summary>
-    private bool IsSkaterRow(List<string> columns)
+    private bool IsSkaterRow(string[] columns)
     {
         // Look for the pattern: "Lane", "Skaters", "Club" followed by data
-        for (int i = 0; i < columns.Count - 3; i++)
+        for (int i = 0; i < columns.Length - 3; i++)
         {
             if (columns[i].Trim().Equals("Lane", StringComparison.OrdinalIgnoreCase) &&
                 columns[i + 1].Trim().Equals("Skaters", StringComparison.OrdinalIgnoreCase) &&
@@ -148,17 +106,17 @@ public class GcpvCsvParser
     /// <summary>
     /// Parses race header information from a row
     /// </summary>
-    private RaceData ParseRaceHeader(List<string> columns)
+    private RaceData ParseRaceHeader(string[] columns)
     {
         var race = new RaceData();
 
         // Find "Event :" and extract race parameters and group
-        for (int i = 0; i < columns.Count - 2; i++)
+        for (int i = 0; i < columns.Length - 2; i++)
         {
             if (columns[i].Equals("Event :", StringComparison.OrdinalIgnoreCase))
             {
                 race.RaceParameters = columns[i + 1];
-                if (i + 2 < columns.Count)
+                if (i + 2 < columns.Length)
                 {
                     race.RaceGroup = columns[i + 2];
                 }
@@ -167,7 +125,7 @@ public class GcpvCsvParser
         }
 
         // Find "Stage :" and extract race stage
-        for (int i = 0; i < columns.Count - 1; i++)
+        for (int i = 0; i < columns.Length - 1; i++)
         {
             if (columns[i].Equals("Stage :", StringComparison.OrdinalIgnoreCase))
             {
@@ -177,7 +135,7 @@ public class GcpvCsvParser
         }
 
         // Find "Race" and extract race number
-        for (int i = 0; i < columns.Count - 1; i++)
+        for (int i = 0; i < columns.Length - 1; i++)
         {
             if (columns[i].Equals("Race", StringComparison.OrdinalIgnoreCase))
             {
@@ -192,21 +150,21 @@ public class GcpvCsvParser
     /// <summary>
     /// Parses skater data from a row
     /// </summary>
-    private SkaterData? ParseSkaterData(List<string> columns)
+    private SkaterData? ParseSkaterData(string[] columns)
     {
         // Find the "Lane", "Skaters", "Club" pattern
-        for (int i = 0; i < columns.Count - 3; i++)
+        for (int i = 0; i < columns.Length - 3; i++)
         {
             if (columns[i].Equals("Lane", StringComparison.OrdinalIgnoreCase) &&
                 columns[i + 1].Equals("Skaters", StringComparison.OrdinalIgnoreCase) &&
                 columns[i + 2].Equals("Club", StringComparison.OrdinalIgnoreCase))
             {
                 // Extract the data that follows
-                if (i + 3 < columns.Count)
+                if (i + 3 < columns.Length)
                 {
                     var laneStr = columns[i + 3];
-                    var skaterName = i + 4 < columns.Count ? columns[i + 4] : "";
-                    var club = i + 5 < columns.Count ? columns[i + 5] : "";
+                    var skaterName = i + 4 < columns.Length ? columns[i + 4] : "";
+                    var club = i + 5 < columns.Length ? columns[i + 5] : "";
 
                     if (int.TryParse(laneStr, out int lane))
                     {
