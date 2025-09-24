@@ -473,6 +473,9 @@ appsettings.Development.json
 appsettings.Production.json
 secrets.json
 
+# Keep the main configuration file
+!appsettings.json
+
 # IDE specific files
 *.swp
 *.swo

@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using CsvHelper;
 using CsvHelper.Configuration;
 using GcpvLynx.Models;
+using GcpvLynx.Services;
 
 namespace GcpvLynx.Parsers;
 
@@ -14,6 +16,13 @@ namespace GcpvLynx.Parsers;
 /// </summary>
 public class GcpvCsvParser
 {
+    private readonly ConfigurationService _configurationService;
+
+    public GcpvCsvParser(ConfigurationService? configurationService = null)
+    {
+        _configurationService = configurationService ?? new ConfigurationService();
+    }
+
     /// <summary>
     /// Parses a GCPV CSV file and returns a list of race data
     /// </summary>
@@ -144,6 +153,9 @@ public class GcpvCsvParser
             }
         }
 
+        // Apply race group trimming based on configuration
+        race.RaceGroup = TrimRaceGroupSuffixes(race.RaceGroup);
+
         return race;
     }
 
@@ -221,5 +233,44 @@ public class GcpvCsvParser
 
         // If no space found in last name part, treat it as just the last name
         return (string.Empty, lastNamePart, firstNamePart);
+    }
+
+    /// <summary>
+    /// Trims configured suffixes from the race group (whole words only)
+    /// </summary>
+    /// <param name="raceGroup">The original race group</param>
+    /// <returns>The race group with suffixes trimmed</returns>
+    private string TrimRaceGroupSuffixes(string raceGroup)
+    {
+        if (string.IsNullOrWhiteSpace(raceGroup))
+            return raceGroup;
+
+        var config = _configurationService.GetConfiguration();
+        var trimmedGroup = raceGroup.Trim();
+
+        foreach (var suffix in config.RaceGroupTrimSuffixes)
+        {
+            if (string.IsNullOrWhiteSpace(suffix))
+                continue;
+
+            var trimmedSuffix = suffix.Trim();
+            
+            // Use regex to match whole words only (word boundary)
+            var pattern = $@"\b{Regex.Escape(trimmedSuffix)}\b$";
+            var match = Regex.Match(trimmedGroup, pattern, RegexOptions.IgnoreCase);
+            
+            if (match.Success)
+            {
+                // Remove the matched suffix and any preceding whitespace
+                trimmedGroup = trimmedGroup.Substring(0, match.Index).TrimEnd();
+                
+                // Normalize multiple spaces to single spaces
+                trimmedGroup = Regex.Replace(trimmedGroup, @"\s+", " ");
+                
+                break; // Only remove the first matching suffix
+            }
+        }
+
+        return trimmedGroup;
     }
 }
