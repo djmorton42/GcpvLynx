@@ -1,0 +1,111 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="GcpvLynx.Views.MainWindow"
+        Title="GcpvLynx - File Selection"
+        Width="600"
+        Height="500"
+        MinWidth="500"
+        MinHeight="400"
+        WindowStartupLocation="CenterScreen">
+
+  <ScrollViewer>
+    <StackPanel Margin="20" Spacing="20">
+      
+      <!-- Header -->
+      <TextBlock Text="GcpvLynx File Selection" 
+                 FontSize="24" 
+                 FontWeight="Bold" 
+                 HorizontalAlignment="Center" 
+                 Foreground="#212121" />
+      
+      <TextBlock Text="Select the required files to begin processing" 
+                 FontSize="14" 
+                 HorizontalAlignment="Center" 
+                 Foreground="#757575" />
+
+      <!-- GCPV Export CSV File Selection -->
+      <Border Background="#FFFFFF" 
+              CornerRadius="8" 
+              Padding="15" 
+              BoxShadow="0 2 8 0 #E0E0E0">
+        <StackPanel Spacing="10">
+          <TextBlock Text="GCPV Export CSV File" 
+                     FontSize="16" 
+                     FontWeight="Bold" 
+                     Foreground="#212121" />
+          
+          <TextBlock Text="Select the GCPV Export CSV file to process" 
+                     FontSize="12" 
+                     Foreground="#757575" />
+          
+          <Button Name="GcpvFileButton"
+                  Content="Browse for GCPV CSV File" 
+                  Click="OnGcpvFileClicked"
+                  Background="#512BD4"
+                  Foreground="White"
+                  CornerRadius="5"
+                  Padding="10" />
+          
+          <TextBlock Name="GcpvFileLabel"
+                     Text="No file selected" 
+                     FontSize="12" 
+                     Foreground="#757575" />
+        </StackPanel>
+      </Border>
+
+      <!-- FinishLynx EVT File Selection -->
+      <Border Background="#FFFFFF" 
+              CornerRadius="8" 
+              Padding="15" 
+              BoxShadow="0 2 8 0 #E0E0E0">
+        <StackPanel Spacing="10">
+          <TextBlock Text="FinishLynx EVT File" 
+                     FontSize="16" 
+                     FontWeight="Bold" 
+                     Foreground="#212121" />
+          
+          <TextBlock Text="Select the FinishLynx EVT file to process" 
+                     FontSize="12" 
+                     Foreground="#757575" />
+          
+          <Button Name="FinishLynxFileButton"
+                  Content="Browse for FinishLynx EVT File" 
+                  Click="OnFinishLynxFileClicked"
+                  Background="#512BD4"
+                  Foreground="White"
+                  CornerRadius="5"
+                  Padding="10" />
+          
+          <TextBlock Name="FinishLynxFileLabel"
+                     Text="No file selected" 
+                     FontSize="12" 
+                     Foreground="#757575" />
+        </StackPanel>
+      </Border>
+
+      <!-- Action Buttons -->
+      <StackPanel Orientation="Horizontal" 
+                  HorizontalAlignment="Center" 
+                  Spacing="20">
+        
+        <Button Name="ProcessButton"
+                Content="Process CSV File" 
+                Click="OnProcessClicked"
+                Background="#4CAF50"
+                Foreground="White"
+                CornerRadius="5"
+                Padding="15,10" />
+        
+        <Button Name="CloseButton"
+                Content="Close Application" 
+                Click="OnCloseClicked"
+                Background="#F44336"
+                Foreground="White"
+                CornerRadius="5"
+                Padding="15,10" />
+      </StackPanel>
+
+    </StackPanel>
+  </ScrollViewer>
+
+</Window>
