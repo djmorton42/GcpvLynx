@@ -27,15 +27,15 @@ public class GcpvCsvParser
     /// Parses a GCPV CSV file and returns a list of race data
     /// </summary>
     /// <param name="filePath">Path to the CSV file</param>
-    /// <returns>List of RaceData objects</returns>
-    public List<RaceData> ParseFile(string filePath)
+    /// <returns>List of CsvRaceData objects</returns>
+    public List<CsvRaceData> ParseFile(string filePath)
     {
         if (!File.Exists(filePath))
         {
             throw new FileNotFoundException($"File not found: {filePath}");
         }
 
-        var racesByNumber = new Dictionary<string, RaceData>();
+        var racesByNumber = new Dictionary<string, CsvRaceData>();
 
         using var reader = new StringReader(File.ReadAllText(filePath));
         using var csv = new CsvReader(reader, new CsvConfiguration(System.Globalization.CultureInfo.InvariantCulture)
@@ -115,9 +115,9 @@ public class GcpvCsvParser
     /// <summary>
     /// Parses race header information from a row
     /// </summary>
-    private RaceData ParseRaceHeader(string[] columns)
+    private CsvRaceData ParseRaceHeader(string[] columns)
     {
-        var race = new RaceData();
+        var race = new CsvRaceData();
 
         // Find "Event :" and extract race parameters and group
         for (int i = 0; i < columns.Length - 2; i++)
@@ -165,7 +165,7 @@ public class GcpvCsvParser
     /// <summary>
     /// Parses skater data from a row
     /// </summary>
-    private SkaterData? ParseSkaterData(string[] columns)
+    private CsvSkaterData? ParseSkaterData(string[] columns)
     {
         // Find the "Lane", "Skaters", "Club" pattern
         for (int i = 0; i < columns.Length - 3; i++)
@@ -185,7 +185,7 @@ public class GcpvCsvParser
                     {
                         var (skaterId, lastName, firstName) = ParseSkaterName(skaterName);
                         
-                        return new SkaterData
+                        return new CsvSkaterData
                         {
                             Lane = lane,
                             SkaterId = skaterId,
@@ -300,7 +300,7 @@ public class GcpvCsvParser
     /// Sets the laps property based on race distance mapping
     /// </summary>
     /// <param name="race">The race to update with laps information</param>
-    private void SetLapsFromDistance(RaceData race)
+    private void SetLapsFromDistance(CsvRaceData race)
     {
         if (string.IsNullOrWhiteSpace(race.RaceParameters))
             return;
