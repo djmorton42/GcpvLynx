@@ -18,7 +18,28 @@ public class AppConfig
     public Dictionary<string, double> DistanceLapMapping { get; set; } = new();
 
     /// <summary>
+    /// EVT backup settings
+    /// </summary>
+    public EvtBackupSettings EvtBackupSettings { get; set; } = new();
+
+    /// <summary>
     /// Default configuration
     /// </summary>
     public static AppConfig Default => new();
+}
+
+/// <summary>
+/// EVT backup configuration settings
+/// </summary>
+public class EvtBackupSettings
+{
+    /// <summary>
+    /// Whether backups are enabled when updating EVT files
+    /// </summary>
+    public bool BackupsEnabled { get; set; } = true;
+
+    /// <summary>
+    /// Name of the backup directory (relative to EVT file location)
+    /// </summary>
+    public string BackupDirectoryName { get; set; } = "backups";
 }

@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using CsvHelper;
 using CsvHelper.Configuration;
 using GcpvLynx.Models;
+using GcpvLynx.Services;
 
 namespace GcpvLynx.Parsers;
 
@@ -18,12 +19,14 @@ public class EvtUpdater
     private readonly string _evtFilePath;
     private readonly List<CsvRaceData> _raceData;
     private readonly bool _createBackup;
+    private readonly ConfigurationService _configurationService;
 
-    public EvtUpdater(string evtFilePath, List<CsvRaceData> raceData, bool createBackup = false)
+    public EvtUpdater(string evtFilePath, List<CsvRaceData> raceData, bool createBackup = false, ConfigurationService? configurationService = null)
     {
         _evtFilePath = evtFilePath ?? throw new ArgumentNullException(nameof(evtFilePath));
         _raceData = raceData ?? throw new ArgumentNullException(nameof(raceData));
         _createBackup = createBackup;
+        _configurationService = configurationService ?? new ConfigurationService();
     }
 
     /// <summary>
@@ -35,8 +38,12 @@ public class EvtUpdater
         {
             var result = new EvtUpdateResult();
             
+            // Determine if backup should be created based on configuration and parameter
+            var config = _configurationService.GetConfiguration();
+            var shouldCreateBackup = _createBackup || config.EvtBackupSettings.BackupsEnabled;
+            
             // Create backup if requested and file exists (BEFORE any modifications)
-            if (_createBackup && File.Exists(_evtFilePath))
+            if (shouldCreateBackup && File.Exists(_evtFilePath))
             {
                 var backupPath = CreateBackup();
                 result.BackupCreated = true;
@@ -79,7 +86,8 @@ public class EvtUpdater
     /// </summary>
     private string CreateBackup()
     {
-        var backupDir = Path.Combine(Path.GetDirectoryName(_evtFilePath) ?? "", "backups");
+        var config = _configurationService.GetConfiguration();
+        var backupDir = Path.Combine(Path.GetDirectoryName(_evtFilePath) ?? "", config.EvtBackupSettings.BackupDirectoryName);
         Directory.CreateDirectory(backupDir);
 
         var fileName = Path.GetFileNameWithoutExtension(_evtFilePath);

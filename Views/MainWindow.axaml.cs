@@ -204,7 +204,8 @@ public partial class MainWindow : Window
         try
         {
             // Create EvtUpdater and update EVT file
-            var evtUpdater = new EvtUpdater(_finishLynxFilePath, _parsedRaces, createBackup: true);
+            var configService = new ConfigurationService();
+            var evtUpdater = new EvtUpdater(_finishLynxFilePath, _parsedRaces, configurationService: configService);
             var result = evtUpdater.UpdateEvtFile();
             
             var message = $"Successfully updated EVT file!\n\n{result.GetSummaryMessage()}\n\nFile: {_finishLynxFilePath}";
