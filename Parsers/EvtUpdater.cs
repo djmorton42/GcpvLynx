@@ -29,21 +29,29 @@ public class EvtUpdater
     /// <summary>
     /// Intelligently updates the EVT file by merging new race data with existing data
     /// </summary>
-    public void UpdateEvtFile()
+    public EvtUpdateResult UpdateEvtFile()
     {
         try
         {
+            var result = new EvtUpdateResult();
+            
             // Create backup if requested and file exists (BEFORE any modifications)
             if (_createBackup && File.Exists(_evtFilePath))
             {
-                CreateBackup();
+                var backupPath = CreateBackup();
+                result.BackupCreated = true;
+                result.BackupPath = backupPath;
             }
 
             // Load existing race data from EVT file
             var existingRaces = LoadExistingRacesFromEvt();
 
-            // Merge new race data with existing data
-            var mergedRaces = MergeRaceData(existingRaces, _raceData);
+            // Merge new race data with existing data and get statistics
+            var (mergedRaces, stats) = MergeRaceDataWithStats(existingRaces, _raceData);
+            result.RacesAdded = stats.RacesAdded;
+            result.RacesUpdated = stats.RacesUpdated;
+            result.RacesUnchanged = stats.RacesUnchanged;
+            result.TotalRaces = mergedRaces.Count;
 
             // Generate complete EVT content
             var evtContent = GenerateEvtContent(mergedRaces);
@@ -57,6 +65,8 @@ public class EvtUpdater
 
             // Write the complete content to the file
             File.WriteAllText(_evtFilePath, evtContent);
+            
+            return result;
         }
         catch (Exception ex)
         {
@@ -67,7 +77,7 @@ public class EvtUpdater
     /// <summary>
     /// Creates a timestamped backup of the EVT file
     /// </summary>
-    private void CreateBackup()
+    private string CreateBackup()
     {
         var backupDir = Path.Combine(Path.GetDirectoryName(_evtFilePath) ?? "", "backups");
         Directory.CreateDirectory(backupDir);
@@ -79,6 +89,7 @@ public class EvtUpdater
         var backupPath = Path.Combine(backupDir, backupFileName);
 
         File.Copy(_evtFilePath, backupPath);
+        return backupPath;
     }
 
     /// <summary>
@@ -194,6 +205,97 @@ public class EvtUpdater
         }
 
         return mergedRaces;
+    }
+
+    /// <summary>
+    /// Merges existing race data with new race data and returns statistics
+    /// </summary>
+    private (List<EvtRaceData> MergedRaces, (int RacesAdded, int RacesUpdated, int RacesUnchanged) Stats) MergeRaceDataWithStats(List<EvtRaceData> existingRaces, List<CsvRaceData> newRaces)
+    {
+        var mergedRaces = new List<EvtRaceData>(existingRaces);
+        var stats = (RacesAdded: 0, RacesUpdated: 0, RacesUnchanged: 0);
+
+        foreach (var newRace in newRaces)
+        {
+            var existingRace = mergedRaces.FirstOrDefault(r => r.RaceNumber == newRace.RaceNumber);
+            
+            if (existingRace != null)
+            {
+                // Check if the race data has actually changed
+                var hasChanged = HasRaceDataChanged(existingRace, newRace);
+                
+                if (hasChanged)
+                {
+                    // Update existing race
+                    existingRace.FullEventName = newRace.GetEventName();
+                    existingRace.Laps = newRace.Laps;
+                    existingRace.Skaters = newRace.Skaters.Select(s => new EvtSkaterData
+                    {
+                        Lane = s.Lane,
+                        SkaterId = s.SkaterId
+                    }).ToList();
+                    stats.RacesUpdated++;
+                }
+                else
+                {
+                    stats.RacesUnchanged++;
+                }
+            }
+            else
+            {
+                // Add new race
+                mergedRaces.Add(new EvtRaceData
+                {
+                    RaceNumber = newRace.RaceNumber,
+                    FullEventName = newRace.GetEventName(),
+                    Laps = newRace.Laps,
+                    Skaters = newRace.Skaters.Select(s => new EvtSkaterData
+                    {
+                        Lane = s.Lane,
+                        SkaterId = s.SkaterId
+                    }).ToList()
+                });
+                stats.RacesAdded++;
+            }
+        }
+
+        // Count unchanged existing races (races that weren't in the new data)
+        var newRaceNumbers = newRaces.Select(r => r.RaceNumber).ToHashSet();
+        stats.RacesUnchanged += existingRaces.Count(r => !newRaceNumbers.Contains(r.RaceNumber));
+
+        return (mergedRaces, stats);
+    }
+
+    /// <summary>
+    /// Checks if race data has changed between existing and new race
+    /// </summary>
+    private bool HasRaceDataChanged(EvtRaceData existing, CsvRaceData newRace)
+    {
+        // Compare event names
+        if (existing.FullEventName != newRace.GetEventName())
+            return true;
+        
+        // Compare laps
+        if (existing.Laps != newRace.Laps)
+            return true;
+        
+        // Compare skaters
+        if (existing.Skaters.Count != newRace.Skaters.Count)
+            return true;
+        
+        var existingSkaters = existing.Skaters.OrderBy(s => s.Lane).ToList();
+        var newSkaters = newRace.Skaters.OrderBy(s => s.Lane).ToList();
+        
+        for (int i = 0; i < existingSkaters.Count; i++)
+        {
+            if (existingSkaters[i].Lane != newSkaters[i].Lane ||
+                existingSkaters[i].SkaterId != newSkaters[i].SkaterId)
+            {
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     /// <summary>

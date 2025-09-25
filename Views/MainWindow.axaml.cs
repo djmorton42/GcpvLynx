@@ -205,9 +205,10 @@ public partial class MainWindow : Window
         {
             // Create EvtUpdater and update EVT file
             var evtUpdater = new EvtUpdater(_finishLynxFilePath, _parsedRaces, createBackup: true);
-            evtUpdater.UpdateEvtFile();
+            var result = evtUpdater.UpdateEvtFile();
             
-            await ShowErrorDialog("Success", $"Successfully updated EVT file with {_parsedRaces.Count} races.\nFile: {_finishLynxFilePath}");
+            var message = $"Successfully updated EVT file!\n\n{result.GetSummaryMessage()}\n\nFile: {_finishLynxFilePath}";
+            await ShowErrorDialog("Success", message);
         }
         catch (Exception ex)
         {
