@@ -15,9 +15,18 @@ public class ConfigurationService
 
     public ConfigurationService()
     {
+        var currentDir = Directory.GetCurrentDirectory();
+        
+        // Look for appsettings.json in the current directory first, then in the parent directory
+        var appSettingsPath = Path.Combine(currentDir, "appsettings.json");
+        if (!File.Exists(appSettingsPath))
+        {
+            appSettingsPath = Path.Combine(currentDir, "..", "GcpvLynx", "appsettings.json");
+        }
+        
         var builder = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+            .SetBasePath(Path.GetDirectoryName(appSettingsPath) ?? currentDir)
+            .AddJsonFile(Path.GetFileName(appSettingsPath), optional: true, reloadOnChange: true);
 
         _configuration = builder.Build();
     }

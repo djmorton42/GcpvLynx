@@ -223,11 +223,12 @@ public class GcpvCsvParser
         var firstNamePart = parts[1].Trim();
 
         // Extract skater ID from the last name part
-        var lastSpaceIndex = lastNamePart.LastIndexOf(' ');
-        if (lastSpaceIndex > 0)
+        // The ID is the first part before the first space, the rest is the last name
+        var firstSpaceIndex = lastNamePart.IndexOf(' ');
+        if (firstSpaceIndex > 0)
         {
-            var skaterId = lastNamePart.Substring(0, lastSpaceIndex).Trim();
-            var lastName = lastNamePart.Substring(lastSpaceIndex + 1).Trim();
+            var skaterId = lastNamePart.Substring(0, firstSpaceIndex).Trim();
+            var lastName = lastNamePart.Substring(firstSpaceIndex + 1).Trim();
             return (skaterId, lastName, firstNamePart);
         }
 
@@ -236,7 +237,7 @@ public class GcpvCsvParser
     }
 
     /// <summary>
-    /// Trims configured suffixes from the race group (whole words only)
+    /// Trims configured suffixes from the race group (whole words only, case insensitive)
     /// </summary>
     /// <param name="raceGroup">The original race group</param>
     /// <returns>The race group with suffixes trimmed</returns>
@@ -255,21 +256,39 @@ public class GcpvCsvParser
 
             var trimmedSuffix = suffix.Trim();
             
-            // Use regex to match whole words only (word boundary)
-            var pattern = $@"\b{Regex.Escape(trimmedSuffix)}\b$";
-            var match = Regex.Match(trimmedGroup, pattern, RegexOptions.IgnoreCase);
-            
-            if (match.Success)
+            // For multi-word suffixes, we need to handle them differently
+            if (trimmedSuffix.Contains(' '))
             {
-                // Remove the matched suffix and any preceding whitespace
-                trimmedGroup = trimmedGroup.Substring(0, match.Index).TrimEnd();
+                // Multi-word suffix: match the entire phrase at the end with any amount of whitespace
+                var escapedSuffix = Regex.Escape(trimmedSuffix);
+                var pattern = $@"\s+{escapedSuffix}$";
+                var match = Regex.Match(trimmedGroup, pattern, RegexOptions.IgnoreCase);
                 
-                // Normalize multiple spaces to single spaces
-                trimmedGroup = Regex.Replace(trimmedGroup, @"\s+", " ");
+                if (match.Success)
+                {
+                    // Remove the matched suffix and any preceding whitespace
+                    trimmedGroup = trimmedGroup.Substring(0, match.Index).TrimEnd();
+                    break;
+                }
+            }
+            else
+            {
+                // Single word suffix: use word boundaries
+                var escapedSuffix = Regex.Escape(trimmedSuffix);
+                var pattern = $@"\b{escapedSuffix}\b$";
+                var match = Regex.Match(trimmedGroup, pattern, RegexOptions.IgnoreCase);
                 
-                break; // Only remove the first matching suffix
+                if (match.Success)
+                {
+                    // Remove the matched suffix and any preceding whitespace
+                    trimmedGroup = trimmedGroup.Substring(0, match.Index).TrimEnd();
+                    break;
+                }
             }
         }
+
+        // Normalize multiple spaces to single spaces
+        trimmedGroup = Regex.Replace(trimmedGroup, @"\s+", " ");
 
         return trimmedGroup;
     }
