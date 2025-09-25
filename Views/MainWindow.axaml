@@ -90,20 +90,25 @@
               BorderThickness="1"
               BoxShadow="0 1 3 0 #1A000000">
         <StackPanel Spacing="8">
-          <TextBlock Text="GCPV Export CSV File" 
-                     FontSize="14" 
-                     FontWeight="SemiBold" 
-                     Foreground="#1F2937" />
-          
-          <TextBlock Text="Select the GCPV Export CSV file to process" 
-                     FontSize="11" 
-                     Foreground="#6B7280" />
-          
-          <Button Name="GcpvFileButton"
-                  Content="Browse for GCPV CSV File" 
-                  Click="OnGcpvFileClicked"
-                  Background="#3B82F6"
-                  Foreground="White" />
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            
+            <TextBlock Text="GCPV Export CSV File" 
+                       FontSize="14" 
+                       FontWeight="SemiBold" 
+                       Foreground="#1F2937"
+                       VerticalAlignment="Center" />
+            
+            <Button Name="GcpvFileButton"
+                    Content="Browse for GCPV CSV File" 
+                    Click="OnGcpvFileClicked"
+                    Background="#3B82F6"
+                    Foreground="White"
+                    Grid.Column="1" />
+          </Grid>
           
           <TextBlock Name="GcpvFileLabel"
                      Text="No file selected" 
@@ -120,20 +125,25 @@
               BorderThickness="1"
               BoxShadow="0 1 3 0 #1A000000">
         <StackPanel Spacing="8">
-          <TextBlock Text="FinishLynx EVT File" 
-                     FontSize="14" 
-                     FontWeight="SemiBold" 
-                     Foreground="#1F2937" />
-          
-          <TextBlock Text="Select the FinishLynx EVT file to process" 
-                     FontSize="11" 
-                     Foreground="#6B7280" />
-          
-          <Button Name="FinishLynxFileButton"
-                  Content="Browse for FinishLynx EVT File" 
-                  Click="OnFinishLynxFileClicked"
-                  Background="#6B7280"
-                  Foreground="White" />
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            
+            <TextBlock Text="FinishLynx EVT File" 
+                       FontSize="14" 
+                       FontWeight="SemiBold" 
+                       Foreground="#1F2937"
+                       VerticalAlignment="Center" />
+            
+            <Button Name="FinishLynxFileButton"
+                    Content="Browse for FinishLynx EVT File" 
+                    Click="OnFinishLynxFileClicked"
+                    Background="#6B7280"
+                    Foreground="White"
+                    Grid.Column="1" />
+          </Grid>
           
           <TextBlock Name="FinishLynxFileLabel"
                      Text="No file selected" 
