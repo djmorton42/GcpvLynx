@@ -14,6 +14,36 @@ public class RaceData
     public double? Laps { get; set; }
     public List<SkaterData> Skaters { get; set; } = new();
 
+    /// <summary>
+    /// Generates the event name in the format: "RaceGroup (RaceParameters) RaceStage"
+    /// Example: "Open Men A (1500 111m) Final" or "Open Women B (1000 111m) Heat, 2 +2"
+    /// </summary>
+    /// <returns>The formatted event name</returns>
+    public string GetEventName()
+    {
+        var parts = new List<string>();
+        
+        // Add race group if present
+        if (!string.IsNullOrWhiteSpace(RaceGroup))
+        {
+            parts.Add(RaceGroup.Trim());
+        }
+        
+        // Add race parameters in parentheses if present
+        if (!string.IsNullOrWhiteSpace(RaceParameters))
+        {
+            parts.Add($"({RaceParameters.Trim()})");
+        }
+        
+        // Add race stage if present
+        if (!string.IsNullOrWhiteSpace(RaceStage))
+        {
+            parts.Add(RaceStage.Trim());
+        }
+        
+        return string.Join(" ", parts);
+    }
+
     public override string ToString()
     {
         var result = $"Race {RaceNumber}: {RaceParameters} - {RaceGroup}\n";
