@@ -152,6 +152,12 @@
                 Background="#F59E0B"
                 Foreground="White" />
         
+        <Button Name="UpdateEvtButton"
+                Content="Update EVT File" 
+                Click="OnUpdateEvtClicked"
+                Background="#10B981"
+                Foreground="White" />
+        
         <Button Name="CloseButton"
                 Content="Close Application" 
                 Click="OnCloseClicked"

@@ -119,6 +119,36 @@ public partial class MainWindow : Window
         await ParseSelectedFile();
     }
 
+    private async void OnUpdateEvtClicked(object? sender, RoutedEventArgs e)
+    {
+        // Check if EVT file is selected
+        if (string.IsNullOrEmpty(_finishLynxFilePath))
+        {
+            await ShowErrorDialog("Error", "Please select a FinishLynx EVT file first.");
+            return;
+        }
+
+        // Check if we have parsed race data
+        if (_parsedRaces.Count == 0)
+        {
+            await ShowErrorDialog("Error", "No race data available. Please parse a CSV file first.");
+            return;
+        }
+
+        try
+        {
+            // Create EvtUpdater and append races to EVT file
+            var evtUpdater = new EvtUpdater(_finishLynxFilePath, _parsedRaces);
+            evtUpdater.AppendRacesToEvt();
+            
+            await ShowErrorDialog("Success", $"Successfully updated EVT file with {_parsedRaces.Count} races.\nFile: {_finishLynxFilePath}");
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorDialog("Error", $"Failed to update EVT file: {ex.Message}");
+        }
+    }
+
     private async Task ParseSelectedFile()
     {
         if (string.IsNullOrEmpty(_gcpvFilePath))
