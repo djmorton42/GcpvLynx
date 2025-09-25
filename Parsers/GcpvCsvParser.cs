@@ -156,6 +156,9 @@ public class GcpvCsvParser
         // Apply race group trimming based on configuration
         race.RaceGroup = TrimRaceGroupSuffixes(race.RaceGroup);
 
+        // Map race distance to laps based on configuration
+        SetLapsFromDistance(race);
+
         return race;
     }
 
@@ -291,5 +294,37 @@ public class GcpvCsvParser
         trimmedGroup = Regex.Replace(trimmedGroup, @"\s+", " ");
 
         return trimmedGroup;
+    }
+
+    /// <summary>
+    /// Sets the laps property based on race distance mapping
+    /// </summary>
+    /// <param name="race">The race to update with laps information</param>
+    private void SetLapsFromDistance(RaceData race)
+    {
+        if (string.IsNullOrWhiteSpace(race.RaceParameters))
+            return;
+
+        var config = _configurationService.GetConfiguration();
+        
+        // Sort distances by length (longest first) to avoid partial matches
+        var sortedMappings = config.DistanceLapMapping
+            .OrderByDescending(x => x.Key.Length)
+            .ToList();
+        
+        // Look for distance matches in the race parameters
+        foreach (var mapping in sortedMappings)
+        {
+            var distance = mapping.Key;
+            var laps = mapping.Value;
+            
+            // Use regex to match whole numbers only (word boundaries)
+            var pattern = $@"\b{distance}\b";
+            if (Regex.IsMatch(race.RaceParameters, pattern))
+            {
+                race.Laps = laps;
+                break; // Use the first match found
+            }
+        }
     }
 }

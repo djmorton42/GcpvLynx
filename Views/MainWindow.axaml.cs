@@ -2,11 +2,13 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using GcpvLynx.Parsers;
 using GcpvLynx.Models;
+using GcpvLynx.Services;
 
 namespace GcpvLynx.Views;
 
@@ -42,6 +44,9 @@ public partial class MainWindow : Window
                 _gcpvFilePath = result[0].Path.LocalPath;
                 GcpvFileLabel.Text = $"Selected: {_gcpvFilePath}";
                 GcpvFileLabel.Foreground = Avalonia.Media.Brushes.Green;
+                
+                // Automatically parse the file after selection
+                await ParseSelectedFile();
             }
         }
         catch (Exception ex)
@@ -111,30 +116,82 @@ public partial class MainWindow : Window
             return;
         }
 
+        await ParseSelectedFile();
+    }
+
+    private async Task ParseSelectedFile()
+    {
+        if (string.IsNullOrEmpty(_gcpvFilePath))
+        {
+            return;
+        }
+
         try
         {
-            var parser = new GcpvCsvParser();
+            var configService = new ConfigurationService();
+            var parser = new GcpvCsvParser(configService);
             _parsedRaces = parser.ParseFile(_gcpvFilePath);
             
-            // Display results
-            var message = $"Successfully parsed {_parsedRaces.Count} races:\n\n";
-            foreach (var race in _parsedRaces)
+            // Populate race selection dropdown
+            PopulateRaceDropdown();
+            
+            // Show results section
+            ResultsSection.IsVisible = true;
+            
+            // Select first race by default
+            if (_parsedRaces.Count > 0)
             {
-                message += $"Race {race.RaceNumber}: {race.RaceParameters} - {race.RaceGroup}\n";
-                message += $"  Stage: {race.RaceStage}\n";
-                message += $"  Skaters: {race.Skaters.Count}\n";
-                foreach (var skater in race.Skaters)
-                {
-                    message += $"    Lane {skater.Lane}: {skater.FullName} ({skater.Club})\n";
-                }
-                message += "\n";
+                RaceSelectionComboBox.SelectedIndex = 0;
             }
             
-            await ShowErrorDialog("Parse Results", message);
+            await ShowErrorDialog("Success", $"Successfully parsed {_parsedRaces.Count} races. Use the dropdown to select a race and view details.");
         }
         catch (Exception ex)
         {
             await ShowErrorDialog("Error", $"Failed to parse CSV file: {ex.Message}");
         }
+    }
+
+    private void PopulateRaceDropdown()
+    {
+        RaceSelectionComboBox.Items.Clear();
+        
+        foreach (var race in _parsedRaces)
+        {
+            var displayText = $"Race {race.RaceNumber}: {race.RaceParameters} - {race.RaceGroup}";
+            RaceSelectionComboBox.Items.Add(new ComboBoxItem 
+            { 
+                Content = displayText, 
+                Tag = race 
+            });
+        }
+    }
+
+    private void OnRaceSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (RaceSelectionComboBox.SelectedItem is ComboBoxItem selectedItem && 
+            selectedItem.Tag is RaceData selectedRace)
+        {
+            // Update race information display
+            UpdateRaceInfo(selectedRace);
+            
+            // Update skaters list box
+            SkatersListBox.ItemsSource = selectedRace.Skaters;
+        }
+    }
+
+    private void UpdateRaceInfo(RaceData race)
+    {
+        var infoText = $"Race {race.RaceNumber}: {race.RaceParameters} - {race.RaceGroup}\n";
+        infoText += $"Stage: {race.RaceStage}\n";
+        
+        if (race.Laps.HasValue)
+        {
+            infoText += $"Laps: {race.Laps}\n";
+        }
+        
+        infoText += $"Skaters: {race.Skaters.Count}";
+        
+        RaceInfoText.Text = infoText;
     }
 }

@@ -11,12 +11,19 @@ public class RaceData
     public string RaceGroup { get; set; } = string.Empty;
     public string RaceStage { get; set; } = string.Empty;
     public string RaceNumber { get; set; } = string.Empty;
+    public double? Laps { get; set; }
     public List<SkaterData> Skaters { get; set; } = new();
 
     public override string ToString()
     {
         var result = $"Race {RaceNumber}: {RaceParameters} - {RaceGroup}\n";
         result += $"  Stage: {RaceStage}\n";
+        
+        if (Laps.HasValue)
+        {
+            result += $"  Laps: {Laps}\n";
+        }
+        
         result += $"  Skaters ({Skaters.Count}) [parsed into separate fields]:\n";
         
         foreach (var skater in Skaters)
