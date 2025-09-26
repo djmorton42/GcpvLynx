@@ -20,13 +20,23 @@ public class EvtUpdater
     private readonly List<CsvRaceData> _raceData;
     private readonly bool _createBackup;
     private readonly ConfigurationService _configurationService;
+    private readonly double? _lapOverride;
 
-    public EvtUpdater(string evtFilePath, List<CsvRaceData> raceData, bool createBackup = false, ConfigurationService? configurationService = null)
+    public EvtUpdater(string evtFilePath, List<CsvRaceData> raceData, bool createBackup = false, ConfigurationService? configurationService = null, double? lapOverride = null)
     {
         _evtFilePath = evtFilePath ?? throw new ArgumentNullException(nameof(evtFilePath));
         _raceData = raceData ?? throw new ArgumentNullException(nameof(raceData));
         _createBackup = createBackup;
         _configurationService = configurationService ?? new ConfigurationService();
+        _lapOverride = lapOverride;
+    }
+
+    /// <summary>
+    /// Gets the effective lap count for a race, using override if provided
+    /// </summary>
+    private double? GetEffectiveLapCount(CsvRaceData race)
+    {
+        return _lapOverride ?? race.Laps;
     }
 
     /// <summary>
@@ -174,48 +184,6 @@ public class EvtUpdater
 
 
     /// <summary>
-    /// Merges existing race data with new race data, updating existing races and adding new ones
-    /// </summary>
-    private List<EvtRaceData> MergeRaceData(List<EvtRaceData> existingRaces, List<CsvRaceData> newRaces)
-    {
-        var mergedRaces = new List<EvtRaceData>(existingRaces);
-
-        foreach (var newRace in newRaces)
-        {
-            var existingRace = mergedRaces.FirstOrDefault(r => r.RaceNumber == newRace.RaceNumber);
-            
-            if (existingRace != null)
-            {
-                // Update existing race
-                existingRace.FullEventName = newRace.GetEventName();
-                existingRace.Laps = newRace.Laps;
-                existingRace.Skaters = newRace.Skaters.Select(s => new EvtSkaterData
-                {
-                    Lane = s.Lane,
-                    SkaterId = s.SkaterId
-                }).ToList();
-            }
-            else
-            {
-                // Add new race
-                mergedRaces.Add(new EvtRaceData
-                {
-                    RaceNumber = newRace.RaceNumber,
-                    FullEventName = newRace.GetEventName(),
-                    Laps = newRace.Laps,
-                    Skaters = newRace.Skaters.Select(s => new EvtSkaterData
-                    {
-                        Lane = s.Lane,
-                        SkaterId = s.SkaterId
-                    }).ToList()
-                });
-            }
-        }
-
-        return mergedRaces;
-    }
-
-    /// <summary>
     /// Merges existing race data with new race data and returns statistics
     /// </summary>
     private (List<EvtRaceData> MergedRaces, (int RacesAdded, int RacesUpdated, int RacesUnchanged) Stats) MergeRaceDataWithStats(List<EvtRaceData> existingRaces, List<CsvRaceData> newRaces)
@@ -236,7 +204,7 @@ public class EvtUpdater
                 {
                     // Update existing race
                     existingRace.FullEventName = newRace.GetEventName();
-                    existingRace.Laps = newRace.Laps;
+                    existingRace.Laps = GetEffectiveLapCount(newRace);
                     existingRace.Skaters = newRace.Skaters.Select(s => new EvtSkaterData
                     {
                         Lane = s.Lane,
@@ -256,7 +224,7 @@ public class EvtUpdater
                 {
                     RaceNumber = newRace.RaceNumber,
                     FullEventName = newRace.GetEventName(),
-                    Laps = newRace.Laps,
+                    Laps = GetEffectiveLapCount(newRace),
                     Skaters = newRace.Skaters.Select(s => new EvtSkaterData
                     {
                         Lane = s.Lane,
@@ -283,8 +251,8 @@ public class EvtUpdater
         if (existing.FullEventName != newRace.GetEventName())
             return true;
         
-        // Compare laps
-        if (existing.Laps != newRace.Laps)
+        // Compare laps (using effective lap count to account for override)
+        if (existing.Laps != GetEffectiveLapCount(newRace))
             return true;
         
         // Compare skaters
@@ -322,8 +290,8 @@ public class EvtUpdater
             var headerLine = GenerateRaceHeaderLine(race);
             lines.Add(headerLine);
 
-            // Add racer lines (3-field CSV)
-            foreach (var skater in race.Skaters)
+            // Add racer lines (3-field CSV) - sorted by lane number
+            foreach (var skater in race.Skaters.OrderBy(s => s.Lane))
             {
                 var racerLine = GenerateRacerLine(skater);
                 lines.Add(racerLine);

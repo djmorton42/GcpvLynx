@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Avalonia.Controls.Primitives;
+using Avalonia.Input;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -201,11 +202,24 @@ public partial class MainWindow : Window
             return;
         }
 
+        // Check for lap override value
+        double? lapOverride = null;
+        if (!string.IsNullOrWhiteSpace(LapOverrideTextBox.Text))
+        {
+            if (!double.TryParse(LapOverrideTextBox.Text, out double lapValue) || lapValue <= 0)
+            {
+                await ShowErrorDialog("Error", "Please enter a valid positive number for the lap count, or leave the field empty to use inferred values.");
+                return;
+            }
+
+            lapOverride = lapValue;
+        }
+
         try
         {
             // Create EvtUpdater and update EVT file
             var configService = new ConfigurationService();
-            var evtUpdater = new EvtUpdater(_finishLynxFilePath, _parsedRaces, configurationService: configService);
+            var evtUpdater = new EvtUpdater(_finishLynxFilePath, _parsedRaces, configurationService: configService, lapOverride: lapOverride);
             var result = evtUpdater.UpdateEvtFile();
             
             var message = $"Successfully updated EVT file!\n\n{result.GetSummaryMessage()}\n\nFile: {_finishLynxFilePath}";
@@ -216,6 +230,7 @@ public partial class MainWindow : Window
             await ShowErrorDialog("Error", $"Failed to update EVT file: {ex.Message}");
         }
     }
+
 
     private async Task ParseSelectedFile()
     {
@@ -235,6 +250,12 @@ public partial class MainWindow : Window
             
             // Show results section
             ResultsSection.IsVisible = true;
+            
+            // Set default lap override value if text box is empty
+            if (string.IsNullOrWhiteSpace(LapOverrideTextBox.Text) && _parsedRaces.Count > 0 && _parsedRaces[0].Laps.HasValue)
+            {
+                LapOverrideTextBox.Text = _parsedRaces[0].Laps!.Value.ToString("0.#");
+            }
         }
         catch (Exception ex)
         {
@@ -564,5 +585,12 @@ public partial class MainWindow : Window
         }
 
         return grid;
+    }
+
+    private void OnBackgroundClicked(object? sender, PointerPressedEventArgs e)
+    {
+        // Remove focus from the text box when clicking elsewhere
+        LapOverrideTextBox.Focusable = false;
+        LapOverrideTextBox.Focusable = true;
     }
 }
