@@ -245,17 +245,14 @@ public partial class MainWindow : Window
             var parser = new GcpvCsvParser(configService);
             _parsedRaces = parser.ParseFile(_gcpvFilePath);
             
+            // Clear the laps override text box when opening a new file
+            LapOverrideTextBox.Text = "";
+            
             // Populate race data display
             PopulateRaceDataDisplay();
             
             // Show results section
             ResultsSection.IsVisible = true;
-            
-            // Set default lap override value if text box is empty
-            if (string.IsNullOrWhiteSpace(LapOverrideTextBox.Text) && _parsedRaces.Count > 0 && _parsedRaces[0].Laps.HasValue)
-            {
-                LapOverrideTextBox.Text = _parsedRaces[0].Laps!.Value.ToString("0.#");
-            }
         }
         catch (Exception ex)
         {

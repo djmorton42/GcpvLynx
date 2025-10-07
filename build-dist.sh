@@ -12,7 +12,7 @@ PROJECT_NAME="GcpvLynx"
 BUILD_CONFIG="Release"
 RUNTIME="win-x64"
 OUTPUT_DIR="dist"
-ZIP_NAME="${PROJECT_NAME}-Windows-$(date +%Y%m%d-%H%M%S).zip"
+ZIP_NAME=GcpvLynx-win-x64.zip
 
 # Clean previous builds
 echo "Cleaning previous builds..."
