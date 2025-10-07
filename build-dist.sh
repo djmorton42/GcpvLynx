@@ -47,28 +47,6 @@ if [ -f "README.md" ]; then
     echo "  ✓ README.md"
 fi
 
-# Create a simple batch file to run the application
-cat > "${OUTPUT_DIR}/run.bat" << 'EOF'
-@echo off
-echo Starting GcpvLynx...
-echo.
-GcpvLynx.exe
-echo.
-echo Application closed. Press any key to exit.
-pause > nul
-EOF
-echo "  ✓ run.bat"
-
-# Create a simple PowerShell script as alternative
-cat > "${OUTPUT_DIR}/run.ps1" << 'EOF'
-Write-Host "Starting GcpvLynx..." -ForegroundColor Green
-Write-Host ""
-& ".\GcpvLynx.exe"
-Write-Host ""
-Write-Host "Application closed. Press any key to exit." -ForegroundColor Yellow
-$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-EOF
-echo "  ✓ run.ps1"
 
 # Create the zip file
 echo "Creating distribution package..."
@@ -92,10 +70,9 @@ echo ""
 echo "To distribute:"
 echo "1. Copy ${ZIP_NAME} to your Windows computer"
 echo "2. Extract the zip file"
-echo "3. Double-click run.bat to start the application"
+echo "3. Double-click GcpvLynx.exe to start the application"
 echo ""
 echo "The package includes:"
 echo "  - Self-contained executable (no .NET installation required)"
 echo "  - Configuration files"
 echo "  - Usage instructions"
-echo "  - Run scripts for easy execution"
