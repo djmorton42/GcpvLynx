@@ -54,9 +54,6 @@ cd "${OUTPUT_DIR}"
 zip -r "../${ZIP_NAME}" . -x "*.pdb" "*.deps.json" "*.runtimeconfig.json"
 cd ..
 
-# Move the zip file to the project root
-mv "${ZIP_NAME}" ./
-
 # Clean up the temporary output directory
 rm -rf "${OUTPUT_DIR}"
 
