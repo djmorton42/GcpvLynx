@@ -2,7 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:models="using:GcpvLynx.Models"
         x:Class="GcpvLynx.Views.MainWindow"
-        Title="GcpvLynx - File Selection"
+        Title="GcpvLynx - FinishLynx Importer"
         Width="800"
         Height="700"
         MinWidth="600"
@@ -93,7 +93,7 @@
     <StackPanel Margin="20" Spacing="20" PointerPressed="OnBackgroundClicked">
       
       <!-- Header -->
-      <TextBlock Text="GcpvLynx File Selection" 
+      <TextBlock Text="GcpvLynx - FinishLynx Importer" 
                  FontSize="18" 
                  FontWeight="Bold" 
                  HorizontalAlignment="Center" 
