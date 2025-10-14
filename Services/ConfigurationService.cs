@@ -40,8 +40,30 @@ public class ConfigurationService
         {
             _appConfig = new AppConfig();
             _configuration.Bind(_appConfig);
+            
+            // Validate OutputEncoding
+            ValidateOutputEncoding(_appConfig.OutputEncoding);
         }
         return _appConfig;
+    }
+
+    /// <summary>
+    /// Validates the OutputEncoding property and exits with error if invalid
+    /// </summary>
+    private static void ValidateOutputEncoding(string outputEncoding)
+    {
+        var validEncodings = new[] { "utf-8", "utf-16", "ascii" };
+        var normalizedEncoding = outputEncoding?.ToLowerInvariant();
+        
+        if (string.IsNullOrEmpty(normalizedEncoding) || !validEncodings.Contains(normalizedEncoding))
+        {
+            Console.WriteLine("❌ Error: Invalid OutputEncoding value in appsettings.json");
+            Console.WriteLine($"   Current value: '{outputEncoding}'");
+            Console.WriteLine($"   Valid values are: {string.Join(", ", validEncodings)}");
+            Console.WriteLine();
+            Console.WriteLine("Please update the OutputEncoding property in appsettings.json and try again.");
+            Environment.Exit(1);
+        }
     }
 
     /// <summary>

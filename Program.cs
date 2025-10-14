@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using GcpvLynx.Views;
+using GcpvLynx.Services;
 using System.IO;
 
 namespace GcpvLynx;
@@ -61,8 +62,34 @@ public partial class App : Application
 public class Program
 {
     [STAThread]
-    public static void Main(string[] args) => BuildAvaloniaApp()
-        .StartWithClassicDesktopLifetime(args);
+    public static void Main(string[] args)
+    {
+        // Display startup information
+        DisplayStartupInfo();
+        
+        BuildAvaloniaApp()
+            .StartWithClassicDesktopLifetime(args);
+    }
+
+    private static void DisplayStartupInfo()
+    {
+        try
+        {
+            var configService = new ConfigurationService();
+            var config = configService.GetConfiguration();
+            
+            Console.WriteLine("🏁 GcpvLynx Starting...");
+            Console.WriteLine($"📝 Output Encoding: {config.OutputEncoding.ToUpperInvariant()}");
+            Console.WriteLine();
+        }
+        catch (Exception ex)
+        {
+            // If there's an error loading config, the validation will handle it
+            Console.WriteLine("🏁 GcpvLynx Starting...");
+            Console.WriteLine("⚠️  Warning: Could not load configuration");
+            Console.WriteLine();
+        }
+    }
 
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
