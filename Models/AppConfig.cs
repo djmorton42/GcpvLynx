@@ -23,6 +23,11 @@ public class AppConfig
     public EvtBackupSettings EvtBackupSettings { get; set; } = new();
 
     /// <summary>
+    /// Output encoding for EVT files (utf-8, utf-16, or ascii)
+    /// </summary>
+    public string OutputEncoding { get; set; } = "ascii";
+
+    /// <summary>
     /// Default configuration
     /// </summary>
     public static AppConfig Default => new();

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using CsvHelper;
 using CsvHelper.Configuration;
@@ -37,6 +38,21 @@ public class EvtUpdater
     private double? GetEffectiveLapCount(CsvRaceData race)
     {
         return _lapOverride ?? race.Laps;
+    }
+
+    /// <summary>
+    /// Gets the encoding to use for writing EVT files based on configuration
+    /// </summary>
+    private Encoding GetOutputEncoding()
+    {
+        var config = _configurationService.GetConfiguration();
+        return config.OutputEncoding.ToLowerInvariant() switch
+        {
+            "utf-16" => Encoding.Unicode,
+            "utf-8" => Encoding.UTF8,
+            "ascii" => Encoding.ASCII,
+            _ => Encoding.ASCII // Default to ASCII for unknown values
+        };
     }
 
     /// <summary>
@@ -80,8 +96,9 @@ public class EvtUpdater
                 Directory.CreateDirectory(directory);
             }
 
-            // Write the complete content to the file
-            File.WriteAllText(_evtFilePath, evtContent);
+            // Write the complete content to the file using the specified encoding
+            var encoding = GetOutputEncoding();
+            File.WriteAllText(_evtFilePath, evtContent, encoding);
             
             return result;
         }
