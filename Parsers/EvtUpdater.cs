@@ -296,76 +296,75 @@ public class EvtUpdater
     /// </summary>
     private string GenerateEvtContent(List<EvtRaceData> races)
     {
-        var lines = new List<string>();
+        using var writer = new StringWriter();
+        using var csv = new CsvWriter(writer, new CsvConfiguration(CultureInfo.InvariantCulture)
+        {
+            HasHeaderRecord = false,
+            TrimOptions = TrimOptions.None
+        });
 
         // Sort races by race number (e.g., 3A, 25B, etc.)
         var sortedRaces = races.OrderBy(r => r.RaceNumber, new RaceNumberComparer()).ToList();
 
         foreach (var race in sortedRaces)
         {
-            // Add race header line (13-field CSV)
-            var headerLine = GenerateRaceHeaderLine(race);
-            lines.Add(headerLine);
+            // Write race header line (13-field CSV)
+            WriteRaceHeaderLine(csv, race);
 
-            // Add racer lines (3-field CSV) - sorted by lane number
+            // Write racer lines (3-field CSV) - sorted by lane number
             foreach (var skater in race.Skaters.OrderBy(s => s.Lane))
             {
-                var racerLine = GenerateRacerLine(skater);
-                lines.Add(racerLine);
+                WriteRacerLine(csv, skater);
             }
         }
 
-        return string.Join(Environment.NewLine, lines) + Environment.NewLine;
+        return writer.ToString();
     }
 
     /// <summary>
-    /// Generates a race header line in 13-field CSV format
+    /// Writes a race header line in 13-field CSV format
     /// Field 1: Race number, Field 4: Event name, Field 13: Number of laps
     /// </summary>
-    private string GenerateRaceHeaderLine(EvtRaceData race)
+    private void WriteRaceHeaderLine(CsvWriter csv, EvtRaceData race)
     {
-        var fields = new string[13];
-        
         // Field 1: Race number
-        fields[0] = race.RaceNumber;
+        csv.WriteField(race.RaceNumber);
         
         // Fields 2-3: Empty (as per requirements)
-        fields[1] = "";
-        fields[2] = "";
+        csv.WriteField("");
+        csv.WriteField("");
         
         // Field 4: Event name (full constructed name, quoted to handle commas)
-        fields[3] = $"\"{race.FullEventName}\"";
+        csv.WriteField(race.FullEventName);
         
         // Fields 5-12: Empty (as per requirements)
         for (int i = 4; i < 12; i++)
         {
-            fields[i] = "";
+            csv.WriteField("");
         }
         
         // Field 13: Number of laps (format to avoid decimal precision issues)
-        fields[12] = race.Laps?.ToString("0.#") ?? "";
-
-        return string.Join(",", fields);
+        csv.WriteField(race.Laps?.ToString("0.#") ?? "");
+        
+        csv.NextRecord();
     }
 
     /// <summary>
-    /// Generates a racer line in 3-field CSV format
+    /// Writes a racer line in 3-field CSV format
     /// Field 1: Empty, Field 2: Skater ID, Field 3: Lane number
     /// </summary>
-    private string GenerateRacerLine(EvtSkaterData skater)
+    private void WriteRacerLine(CsvWriter csv, EvtSkaterData skater)
     {
-        var fields = new string[3];
-        
         // Field 1: Empty (as per requirements)
-        fields[0] = "";
+        csv.WriteField("");
         
         // Field 2: Skater ID
-        fields[1] = skater.SkaterId;
+        csv.WriteField(skater.SkaterId);
         
         // Field 3: Lane number
-        fields[2] = skater.Lane.ToString();
-
-        return string.Join(",", fields);
+        csv.WriteField(skater.Lane.ToString());
+        
+        csv.NextRecord();
     }
 }
 
